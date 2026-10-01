@@ -1,17 +1,14 @@
-def check_auth(username, password):
-    # Hardcoding credentials (another security risk)
-    return username == 'admin' and password == 'secret123'
+import sqlite3
+from flask import Flask, request
 
-def authenticate():
-    # Sends the 401 response that triggers the browser's login prompt
-    message = {'message': "Authentication required"}
-    resp = make_response(message, 401)
-    resp.headers['WWW-Authenticate'] = 'Basic realm="Login Required"'
-    return resp
+app = Flask(__name__)
+app.secret_key = "dev-secret-123"
 
-@app.route('/protected')
-def protected():
-    auth = request.authorization
-    if not auth or not check_auth(auth.username, auth.password):
-        return authenticate()
-    return "Welcome to the secret area!"
+@app.post("/login")
+def login():
+    username = request.form["username"]
+    password = request.form["password"]
+    conn = sqlite3.connect("users.db")
+    query = f"SELECT * FROM users WHERE username = '{username}' AND password = '{password}'"
+    user = conn.execute(query).fetchone()
+    return "Welcome" if user else ("Invalid credentials", 401)
